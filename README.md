@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Level Sensor Quiz</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore-compat.js"></script>
+  <script src="firebase.js"></script>
+</head>
+<body>
+  <div id="login">
+    <h2>Student Login</h2>
+    <input type="text" id="name" placeholder="Enter your name" />
+    <input type="password" id="password" placeholder="Enter password" />
+    <button onclick="startQuiz()">Start Quiz</button>
+    <p id="loginError" style="color: red;"></p>
+  </div>
+
+  <div id="quiz" style="display:none;">
+    <h2 id="question"></h2>
+    <div id="options"></div>
+    <p id="timer">13</p>
+    <button onclick="nextQuestion()">Next</button>
+    <p id="scoreDisplay"></p>
+  </div>
+
+  <script>
+    const quiz = [
+      { question: "Which of the following is a contact type level sensor?", options: ["Ultrasonic", "Capacitive", "Radar", "Optical"], answer: 1 },
+      { question: "Ultrasonic sensors work based on?", options: ["Resistance", "Time of flight", "Capacitance", "Infrared"], answer: 1 },
+      { question: "Float sensors use which principle?", options: ["Magnetic", "Buoyancy", "Piezo", "Infrared"], answer: 1 },
+      { question: "Best for corrosive liquids without contact?", options: ["Float", "Probe", "Ultrasonic", "Displacer"], answer: 2 },
+      { question: "Radar level sensors use?", options: ["Sound", "Light", "Microwaves", "IR"], answer: 2 },
+      { question: "NOT a level sensor app?", options: ["Tank level", "Proximity detect", "Fuel monitor", "Flow control"], answer: 1 }
+    ];
+
+    let current = 0, score = 0, user = "", timer = 13, timerId = null;
+
+    function startQuiz() {
+      const name = document.getElementById('name').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      if (!name || pass !== "level") {
+        document.getElementById('loginError').innerText = "Wrong password or name missing!";
+        return;
+      }
+      user = name;
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('quiz').style.display = 'block';
+      showQuestion();
+    }
+
+    function showQuestion() {
+      clearInterval(timerId);
+      timer = 13;
+      document.getElementById("timer").innerText = timer;
+      timerId = setInterval(() => {
+        timer--;
+        document.getElementById("timer").innerText = timer;
+        if (timer === 0) nextQuestion();
+      }, 1000);
+
+      const q = quiz[current];
+      document.getElementById("question").innerText = `${current + 1}. ${q.question}`;
+      const options = document.getElementById("options");
+      options.innerHTML = "";
+      q.options.forEach((opt, i) => {
+        const div = document.createElement("div");
+        div.innerHTML = `<label><input type="radio" name="opt" value="${i}"> ${opt}</label>`;
+        options.appendChild(div);
+      });
+    }
+
+    function nextQuestion() {
+      clearInterval(timerId);
+      const selected = document.querySelector('input[name="opt"]:checked');
+      if (selected && parseInt(selected.value) === quiz[current].answer) score++;
+      current++;
+      if (current < quiz.length) {
+        showQuestion();
+      } else {
+        document.getElementById("quiz").innerHTML = `<h2>Quiz Finished!</h2><p>Score: ${score}/${quiz.length}</p>`;
+        saveToFirebase(user, score);
+      }
+    }
+
+    function saveToFirebase(name, score) {
+      firebase.firestore().collection("scores").add({ name, score, timestamp: new Date() });
+    }
+  </script>
+</body>
+</html>
