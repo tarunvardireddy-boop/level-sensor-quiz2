@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Live Leaderboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore-compat.js"></script>
+  <script src="firebase.js"></script>
+</head>
+<body>
+  <div id="hostLogin">
+    <h2>Host Login</h2>
+    <input type="password" id="hostPass" placeholder="Enter Host Password" />
+    <button onclick="loginHost()">Enter</button>
+    <p id="error" style="color: red;"></p>
+  </div>
+
+  <div id="leaderboard" style="display:none;">
+    <h2>Live Leaderboard</h2>
+    <table border="1" cellpadding="10">
+      <thead>
+        <tr><th>Name</th><th>Score</th><th>Time</th></tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    function loginHost() {
+      const pass = document.getElementById("hostPass").value.trim();
+      if (pass !== "tarun8208") {
+        document.getElementById("error").innerText = "Incorrect Password!";
+        return;
+      }
+      document.getElementById("hostLogin").style.display = "none";
+      document.getElementById("leaderboard").style.display = "block";
+
+      firebase.firestore().collection("scores").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+        const tbody = document.getElementById("tableBody");
+        tbody.innerHTML = "";
+        snapshot.forEach(doc => {
+          const { name, score, timestamp } = doc.data();
+          const tr = document.createElement("tr");
+          const date = timestamp.toDate().toLocaleString();
+          tr.innerHTML = `<td>${name}</td><td>${score}</td><td>${date}</td>`;
+          tbody.appendChild(tr);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
